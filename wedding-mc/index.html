@@ -895,7 +895,7 @@ async function handleScriptFile(f){ const st=$('#impStatus'); const say=(t,err)=
   try{ const name=f.name.toLowerCase();
     if(name.endsWith('.json')){ const data=JSON.parse(await f.text()); if(!data.project||!Array.isArray(data.project.sections)) throw new Error('백업 파일 형식이 아니에요.'); await restoreBackup(data); closeModal(); toast('백업을 불러왔어요'); return; }
     if(name.endsWith('.pdf')||f.type==='application/pdf'){ say('PDF 읽는 중…'); const r=await parsePdf(f,say); showParsed(r,f.name); return; }
-    say('텍스트 읽는 중…'); let txt=await f.text(); if(/�/.test(txt.slice(0,2000))){ try{ txt=new TextDecoder('euc-kr').decode(await f.arrayBuffer()); }catch(e){} }
+    say('텍스트 읽는 중…'); let txt=await f.text(); if(/\uFFFD/.test(txt.slice(0,2000))){ try{ txt=new TextDecoder('euc-kr').decode(await f.arrayBuffer()); }catch(e){} }
     showParsed(parseText(txt),f.name);
   }catch(e){ console.error(e); say(/load https/.test(e.message)?'PDF 분석 도구를 불러오지 못했어요. 인터넷 연결을 확인하거나 TXT로 저장해 넣어 주세요.':('불러오지 못했어요: '+e.message),true); } }
 function showParsed(r,src){ parsed=r; parsed.source=src; const st=$('#impStatus'); const pv=$('#impPreview'); if(!pv) return;
