@@ -46,7 +46,7 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(60px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(var(--dock-h) + 24px)}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(100px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(var(--dock-h) + 24px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:41;background:var(--bg)}
 body.lock{overflow:hidden}
@@ -95,11 +95,29 @@ button{cursor:pointer}
 .progress{height:4px;border-radius:2px;background:var(--hover-2);overflow:hidden;margin:6px 10px 2px}
 .progress i{display:block;height:100%;background:var(--t-green)}
 .backdrop{position:fixed;inset:0;background:rgba(15,15,15,.45);z-index:65}
-@media (min-width:1000px){ .shell{margin-left:var(--side-w)} .dock{left:var(--side-w)!important} .only-narrow{display:none!important} }
-@media (max-width:999px){ .side{transform:translateX(-102%);transition:transform .22s ease;box-shadow:var(--shadow);width:min(86vw,320px)} .side.open{transform:none} .only-wide{display:none!important} }
+.side{transform:translateX(-102%);transition:transform .22s ease;box-shadow:var(--shadow);width:min(86vw,320px)}
+.side.open{transform:none}
+@media (min-width:520px){ body.pinned .side{transform:none;box-shadow:none;width:var(--side-w)} body.pinned .shell{margin-left:var(--side-w)} body.pinned .dock{left:var(--side-w)!important} body.pinned .backdrop{display:none!important} }
+@media (min-width:520px) and (max-width:999px){ :root{--side-w:212px} .side .nav{font-size:13.5px} }
+@media (min-width:1000px){ .only-narrow{display:none!important} }
+@media (max-width:999px){ .only-wide{display:none!important} }
+.pin{border:0;background:none;border-radius:4px;padding:2px 6px;font-size:14px;color:var(--ink-3);filter:grayscale(1);opacity:.7}
+.pin:hover{background:var(--hover-2)}
+.pin[aria-pressed="true"]{filter:none;opacity:1}
+.chipbar{display:none;gap:4px;overflow-x:auto;padding-block:6px;padding-left:var(--gut-l);padding-right:var(--gut-r);border-bottom:1px solid var(--line);background:var(--bg);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chipbar::-webkit-scrollbar{display:none}
+@media (max-width:519px){ body.pinned .head .chipbar{display:flex} }
+.stage .chipbar{display:flex}
+.chipbar button{flex:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line-2);background:var(--bg);border-radius:6px;padding:4px 9px;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.chipbar button:hover{background:var(--hover)}
+.chipbar button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chipbar .n{font-family:var(--f-num);font-size:11px;opacity:.7}
+.chipbar .ok{color:var(--t-green);font-weight:700}
+.chipbar button.on .ok{color:inherit}
 
 /* ---------- top bar ---------- */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--bg);display:flex;align-items:center;gap:6px;min-height:46px;padding-block:6px;padding-left:var(--gut-l);padding-right:var(--gut-r)}
+.head{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+.top{background:var(--bg);display:flex;align-items:center;gap:6px;min-height:46px;padding-block:6px;padding-left:var(--gut-l);padding-right:var(--gut-r)}
 .crumb{flex:1;min-width:0;display:flex;align-items:center;gap:4px;font-size:14px;color:var(--ink-2);overflow:hidden;white-space:nowrap}
 .crumb button{border:0;background:none;padding:2px 6px;border-radius:4px;color:inherit;max-width:44%;overflow:hidden;text-overflow:ellipsis}
 .crumb button:hover{background:var(--hover)}
@@ -399,7 +417,7 @@ table.q-t th{background:#f7f7f5;color:#787774;font-weight:600}
 </style>
 
 <aside class="side" id="side" aria-label="사이드바">
-  <div class="ws"><div class="ws-ic">💍</div><div class="ws-t"><b id="wsTitle"></b><small id="wsSub"></small></div></div>
+  <div class="ws"><div class="ws-ic">💍</div><div class="ws-t"><b id="wsTitle"></b><small id="wsSub"></small></div><button class="pin" id="pinBtn" data-act="pin" title="식순 목록 고정" aria-label="식순 목록 고정">📌</button></div>
   <div class="progress" title="연습 완료 비율"><i id="wsProg" style="width:0"></i></div>
   <div class="side-scroll">
     <button class="nav" data-act="home" id="navHome"><span class="ic">🏠</span><span class="lbl">예식 개요</span></button>
@@ -417,13 +435,13 @@ table.q-t th{background:#f7f7f5;color:#787774;font-weight:600}
 <div class="backdrop" id="backdrop" data-act="closeSide" hidden></div>
 
 <div class="shell">
-  <div class="top">
-    <button class="btn ghost sm only-narrow" data-act="openSide" aria-label="사이드바 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+  <div class="head"><div class="top">
+    <button class="btn ghost sm" data-act="menuBtn" id="menuBtn" aria-label="식순 목록"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
     <div class="crumb" id="crumb"></div>
     <button class="btn ghost sm" data-act="sos" title="변수 상황 대처 멘트">🚨<span class="only-wide">대처</span></button>
     <button class="btn ghost sm only-wide" data-act="exportPdf">PDF</button>
     <button class="btn primary sm" data-act="stage">▶ 무대 모드</button>
-  </div>
+  </div><nav class="chipbar" id="chipBar" aria-label="식순 바로가기"></nav></div>
   <main class="page" id="page"></main>
 </div>
 
@@ -453,6 +471,7 @@ table.q-t th{background:#f7f7f5;color:#787774;font-weight:600}
     <button class="btn sm fs" data-act="stFont" data-d="2" aria-label="글자 크게">가+</button>
     <div class="st-clock" id="stClock"></div>
   </div>
+  <nav class="chipbar" id="stChips" aria-label="식순 바로가기"></nav>
   <div class="st-body" id="stBody"></div>
   <div class="st-bot">
     <button class="btn" data-act="stPrev">◀ 이전</button>
@@ -514,7 +533,7 @@ const Store={ db:null, mem:{kv:new Map(),audio:new Map()},
    State
    ============================================================ */
 let P=null;
-const S={fontSize:20, stageSize:34, cps:5, autoScroll:true, theme:'system', rate:1};
+const S={fontSize:20, stageSize:34, cps:5, autoScroll:true, theme:'system', rate:1, pinSide:true};
 const UI={view:'home', secId:null, mode:'read', selA:null, selB:null, multi:false, cursor:-1, stage:false, hold:null, editing:null};
 let saveT;
 function save(){ clearTimeout(saveT); saveT=setTimeout(()=>{ Store.put('kv','project',JSON.parse(JSON.stringify(P))); Store.put('kv','settings',{...S}); },250); }
@@ -841,7 +860,12 @@ function eventText(short){ if(!P.eventAt) return ''; const d=new Date(P.eventAt)
   const day=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime(); const days=Math.round((day(d)-day(now))/864e5); const diff=d-now; let dd;
   if(days>0) dd=`D-${days}`; else if(diff>0){ const hh=Math.floor(diff/36e5), mm=Math.floor(diff%36e5/6e4); dd=`D-day · ${hh?hh+'시간 ':''}${mm}분 남음`; } else if(diff>-3*36e5) dd='예식 진행 중'; else dd='예식 종료';
   return short?`<b>${dd}</b> · ${ds}`:{dd,ds}; }
-function renderSide(){ $('#wsTitle').textContent=P.title||'우리 결혼식'; $('#wsSub').innerHTML=eventText(true)||`${P.sections.length}개 순서`;
+function chipsHTML(stage){ return (stage?'':`<button class="${UI.view==='home'?'on':''}" data-act="home">🏠 개요</button>`)+P.sections.map((s,i)=>`<button class="${(UI.view==='sec'||stage)&&s.id===UI.secId?'on':''}" data-act="goSec" data-sec="${s.id}"><span class="n">${i+1}</span>${secIcon(s.title)} ${esc(s.title)}${s.done?' <span class="ok">✓</span>':''}</button>`).join(''); }
+function centerChip(bar){ const on=bar&&bar.querySelector('.on'); if(on) bar.scrollLeft=on.offsetLeft-bar.clientWidth/2+on.offsetWidth/2; }
+const docked=()=>S.pinSide&&innerWidth>=520;
+function renderSide(){ document.body.classList.toggle('pinned',!!S.pinSide); $('#pinBtn').setAttribute('aria-pressed',String(!!S.pinSide)); $('#pinBtn').title=S.pinSide?'고정 해제':'식순 목록 고정';
+  const cb=$('#chipBar'); cb.innerHTML=chipsHTML(false); requestAnimationFrame(()=>centerChip(cb));
+  $('#wsTitle').textContent=P.title||'우리 결혼식'; $('#wsSub').innerHTML=eventText(true)||`${P.sections.length}개 순서`;
   const done=P.sections.filter(s=>s.done).length; $('#wsProg').style.width=(P.sections.length?done/P.sections.length*100:0)+'%';
   $('#navHome').classList.toggle('on',UI.view==='home'); $('#navMusic').textContent=P.tracks.length?P.tracks.length+'곡':'';
   $('#navList').innerHTML=P.sections.map((s,i)=>`<button class="nav ${UI.view==='sec'&&s.id===UI.secId?'on':''}" data-act="goSec" data-sec="${s.id}"><span class="n">${i+1}</span><span class="ic">${secIcon(s.title)}</span><span class="lbl">${esc(s.title)}</span>${s.done?'<span class="ok">✓</span>':''}</button>`).join(''); }
@@ -1043,6 +1067,7 @@ function renderStage(){ const s=sec(), i=secIdx(); document.documentElement.styl
   else { const box=document.createElement('div'); body.appendChild(box); renderBlocks(box,s,'stage'); }
   const n=P.sections[i+1]; const first=n&&n.blocks.find(b=>SPOKEN.has(btype(b.text)));
   $('#stNext').innerHTML=n?`다음 · <b>${esc(n.title)}</b>${first?` — ${esc(shownText(first.text).slice(0,28))}…`:''}`:'<b>마지막 순서</b>';
+  const sc=$('#stChips'); sc.innerHTML=chipsHTML(true); requestAnimationFrame(()=>centerChip(sc));
   body.scrollTop=0; updateClock(); kick(); }
 function updateClock(){ if(!UI.stage) return; const d=new Date(); const h=d.getHours(); const et=P.eventAt?new Date(P.eventAt):null; let sub='';
   if(et&&!isNaN(et)){ const diff=(d-et)/6e4; const left=Math.ceil(-diff); sub=diff<0?(left>=1440?`예식 D-${Math.round(left/1440)}`:left>=90?`시작까지 ${Math.floor(left/60)}시간 ${left%60}분`:`시작까지 ${left}분`):(diff<240?`시작 후 ${Math.floor(diff)}분`:''); }
@@ -1063,11 +1088,13 @@ function markStageCursor(){ const box=$('#stBody .blocks'); if(!box) return; $$(
 async function goSec(id){ flushEditor(); if(UI.hold) holdEnd(); UI.view='sec'; UI.secId=id; UI.selA=UI.selB=null; UI.cursor=-1; await Clock.bind(sec()); render(); if(!UI.stage) window.scrollTo({top:0}); closeSide(); }
 async function goHome(){ flushEditor(); UI.view='home'; UI.cursor=-1; await Clock.bind(null); render(); window.scrollTo({top:0}); closeSide(); }
 function stepSection(d){ const i=secIdx()+d; if(i>=0&&i<P.sections.length) return goSec(P.sections[i].id); return Promise.resolve(); }
-function openSide(){ $('#side').classList.add('open'); $('#backdrop').hidden=false; }
-function closeSide(){ $('#side').classList.remove('open'); $('#backdrop').hidden=true; }
+function openSide(){ $('#side').classList.add('open'); if(!docked()) $('#backdrop').hidden=false; }
+function closeSide(){ if(docked()) return; $('#side').classList.remove('open'); $('#backdrop').hidden=true; }
 function blockIdx(el){ return +el.dataset.idx; }
 const actions={
-  noop:()=>{}, openSide, closeSide, home:()=>{ closeModal(); goHome(); },
+  noop:()=>{}, openSide, closeSide,
+  menuBtn:()=>{ if(docked()){ S.pinSide=false; save(); renderSide(); toast('식순 목록 고정을 풀었어요. 📌로 다시 고정할 수 있어요.'); } else openSide(); },
+  pin:()=>{ S.pinSide=!S.pinSide; save(); renderSide(); if(S.pinSide){ closeSide(); toast(innerWidth>=520?'식순 목록을 왼쪽에 고정했어요':'식순 바를 화면 위에 고정했어요'); } }, home:()=>{ closeModal(); goHome(); },
   goSec:el=>{ closeModal(); goSec(el.dataset.sec); },
   mode:el=>{ flushEditor(); UI.mode=el.dataset.mode; UI.cursor=-1; if(UI.mode==='timing'&&UI.selA==null){ const s=sec(); const k=s.blocks.findIndex(b=>SPOKEN.has(btype(b.text))); if(k>=0) UI.selA=UI.selB=k; } renderPage(); renderDock(); },
   play:()=>Clock.toggle(), back:()=>Clock.seek(Clock.time()-5), fwd:()=>Clock.seek(Clock.time()+5),
@@ -1296,6 +1323,7 @@ function openSettings(){ const m=openModal(`${mHead('⚙️ 설정 · 백업')}
   <div class="set-row"><div>무대 모드 글자 크기<small>멀리 두고 볼 때 크게</small></div><input type="range" id="sStage" min="22" max="72" value="${S.stageSize}"></div>
   <div class="set-row"><div>읽기 속도 <b class="num" id="cpsV">${S.cps}</b>글자/초<small>예상 시간과 ‘끝=예상’ 계산에 쓰여요. 보통 4.5–5.5</small></div><input type="range" id="sCps" min="3" max="8" step="0.5" value="${S.cps}"></div>
   <div class="set-row"><div>재생 중 자동 스크롤<small>읽을 문장을 화면 가운데로</small></div><input type="checkbox" id="sAuto" ${S.autoScroll?'checked':''}></div>
+  <div class="set-row"><div>식순 목록 고정<small>태블릿·PC는 왼쪽 사이드바, 휴대폰은 화면 위 식순 바로 고정돼요</small></div><input type="checkbox" id="sPin" ${S.pinSide?'checked':''}></div>
   <div class="set-row"><div>화면 테마</div><select id="sTheme"><option value="system">기기 설정 따름</option><option value="light">밝게</option><option value="dark">어둡게</option></select></div>
   <h3>백업 · 다른 기기로 옮기기</h3>
   <p>대본·메모·타이밍·대처 멘트를 백업해 휴대폰↔태블릿으로 옮길 수 있어요. 음악 파일은 각 기기에서 다시 넣어 주세요.</p>
@@ -1306,6 +1334,7 @@ function openSettings(){ const m=openModal(`${mHead('⚙️ 설정 · 백업')}
   $('#sStage',m).oninput=e=>{ S.stageSize=+e.target.value; applySettings(); save(); };
   $('#sCps',m).oninput=e=>{ S.cps=+e.target.value; $('#cpsV').textContent=S.cps; save(); renderSide(); };
   $('#sAuto',m).onchange=e=>{ S.autoScroll=e.target.checked; save(); };
+  $('#sPin',m).onchange=e=>{ S.pinSide=e.target.checked; save(); renderSide(); };
   $('#sTheme',m).onchange=e=>{ S.theme=e.target.value; applySettings(); save(); };
   const data=()=>JSON.stringify({app:'wedding-mc',version:2,savedAt:new Date().toISOString(),project:P,settings:S});
   $('#bSave',m).onclick=async()=>{ const r=await saveFile(`MC대본백업-${toLocalISO(new Date()).slice(0,10)}.json`,new Blob([data()],{type:'application/json'})); if(r==='saved') toast('백업 파일을 저장했어요'); else if(r==='failed') copyText(data(),'백업 내용을 복사했어요'); };
@@ -1355,7 +1384,7 @@ function sampleProject(){ const S_=(title,o,lines)=>newSection({title,...o,block
   applySettings(); UI.secId=P.sections[0].id; UI.view='home';
   await Clock.bind(null); render();
   setInterval(()=>{ renderSide(); updateClock(); },30000);
-  window.addEventListener('resize',()=>document.documentElement.style.setProperty('--dock-h',Math.max(68,$('#dock').offsetHeight)+'px'));
+  window.addEventListener('resize',()=>{ document.documentElement.style.setProperty('--dock-h',Math.max(68,$('#dock').offsetHeight)+'px'); if(docked()){ $('#side').classList.remove('open'); $('#backdrop').hidden=true; } });
 })();
 </script>
 <!-- app:end -->
